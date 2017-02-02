@@ -1,0 +1,80 @@
+* {margin:0;padding:0;box-sizing:border-box;}
+div {position:relative}
+body, html {width:100%;height:100%;}
+
+#spetsad-canvas 
+  width 100%
+  height 100%
+  cursor pointer
+
+#ui 
+  position absolute
+  bottom 0px
+  left 0px
+  top 0px
+  width 250px
+  overflow hidden
+  background rgba(0,0,0,0.3)
+  padding-top 40px
+  padding-left 10px
+  color #efefef
+  &:after
+    display block
+    content ''
+    clear both
+
+
+body 
+  background #efefef 
+
+#game-info
+  width 100%
+  height 200px
+#creep-info
+  width 100%
+  height 50%
+#creep-info-data
+  width 100%
+  padding 20px 0
+  border-top 2px solid lightblue
+#creep-info-network
+  width 100%
+  height 300px
+
+.button-lb
+  line-height 30px
+  font-size 16px
+  font-family 'Calibri'
+  border 2px solid lightblue
+  display inline-block
+  padding 0 20px
+  cursor pointer
+  &:hover
+    background lightblue
+    color #333
+
+.neuron
+  position absolute
+  top 25px
+  left 0px
+  width 30px
+  height 30px
+  border-radius 100%
+  background #333
+  color #fff
+  line-height 30px
+  text-align center
+  font-size 9px
+  
+.gate
+  left 105px
+  
+.output 
+  left 185px
+  
+svg
+  width 100%
+  height 100%
+  z-index -1
+  .line
+    position absolute
