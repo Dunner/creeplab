@@ -144,7 +144,7 @@
   });
   gulp.task('startProdServer', function() {
     connect.server({
-      port: 8080,
+      port: 9003,
       root: 'dist'
     });
   });
