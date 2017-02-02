@@ -19,28 +19,36 @@
   //## 
   // Confingure our directories 
   var paths = { 
-    js:     'dev/js/**/*.js', 
-    css:    'dev/css', 
+    dist:   'dist',
+    dev:    'dev',
+    scripts:'dev/scripts',
     styles: 'dev/styles', 
     html:   'dev/index.html',
     images: 'dev/images', 
-    dist:   'dist/'
   }; 
   //## 
   // Begin Script Tasks 
   //## 
-  gulp.task('lint', function () { 
-    return gulp.src([ 
-        paths.js 
-      ]) 
-      .pipe(jshint()) 
-      .pipe(jshint.reporter(stylish)) 
-  }); 
+
+  gulp.task('cleanDevBundles', function() {
+    return gulp.src(paths.dev + '/bundles')
+    .pipe(clean());
+  });
+
+  // Process scripts and concatenate them into one output file
+  gulp.task('scripts', ['cleanDevBundles'], function() {
+    return gulp.src(paths.scripts + '/**/*.js')
+    .pipe(jshint()) 
+    .pipe(jshint.reporter(stylish)) 
+    .pipe(uglify())
+    .pipe(concat('bundle.js'))
+    .pipe(gulp.dest(paths.dev+'/bundles'));
+  });
   //## 
   // Stylus Tasks 
   //## 
-  gulp.task('styles', function () { 
-    gulp.src(paths.styles + '/*.styl') 
+  gulp.task('styles', ['scripts'], function () { 
+    return gulp.src(paths.styles + '/*.styl') 
       .pipe(sourcemaps.init()) 
       .pipe(stylus({ 
         paths:  ['node_modules'], 
@@ -49,25 +57,20 @@
         'include css': true 
       })) 
       .on('error', function(err){console.log(err.toString());this.emit('end');}) 
-      .pipe(sourcemaps.write('.')) 
-      .pipe(gulp.dest(paths.css)) 
-      .pipe(browserSync.stream()); 
-  }); 
-  //## 
-  // Autoprefixer Tasks 
-  //## 
-  gulp.task('prefix', function () { 
-    gulp.src(paths.css + '/*.css') 
       .pipe(prefix(["last 8 version", "> 1%", "ie 8"])) 
-      .pipe(gulp.dest(paths.css)); 
+      .pipe(concat('bundle.css'))
+      .pipe(sourcemaps.write('.')) 
+      .pipe(gulp.dest(paths.dev+'/bundles')) 
+      .pipe(browserSync.stream());
   }); 
+
   //## 
   // Watch 
   //## 
-  gulp.task('watch', function () { 
-    gulp.watch(paths.js, ['lint']); 
-    gulp.watch(paths.styles + '/**/*.styl', ['styles']); 
-    gulp.watch('dev/**/*.js').on('change', reload); 
+  gulp.task('watch', ['cleanDevBundles'], function () { 
+    gulp.watch(paths.dev + '/**/*.js', ['scripts', 'styles']); 
+    gulp.watch(paths.dev + '/**/*.styl', ['scripts','styles']); 
+    gulp.watch('dev/bundles/**/*.js').on('change', reload); 
     gulp.watch('dev/**/*.html').on('change', reload); 
   }); 
   //## 
@@ -87,18 +90,6 @@
     }); 
   }); 
 
-  //## 
-  // Copy Dist
-  //## 
-  gulp.task('copyDist', function () { 
-    return gulp.src([ 
-        paths.js 
-      ]) 
-      .pipe(jshint()) 
-      .pipe(jshint.reporter(stylish)) 
-  }); 
-
-
 
 
   // Delete the dist directory
@@ -107,16 +98,6 @@
     .pipe(clean());
   });
 
-  // // Process scripts and concatenate them into one output file
-  // gulp.task('scripts', ['clean'], function() {
-  //   gulp.src(paths.scripts, {cwd: bases.app})
-  //   .pipe(jshint())
-  //   .pipe(jshint.reporter('default'))
-  //   .pipe(uglify())
-  //   .pipe(concat('app.min.js'))
-  //   .pipe(gulp.dest(bases.dist + 'scripts/'));
-  // });
-
   // // Imagemin images and ouput them in dist
   // gulp.task('imagemin', ['clean'], function() {
   //   gulp.src(paths.images)
@@ -124,25 +105,23 @@
   //   .pipe(gulp.dest(bases.dist + 'images/'));
   // });
 
-  // Copy all other files to dist directly
-  gulp.task('copy', ['clean'], function() {
+  // Copy files to dist directly
+  gulp.task('copy', ['scripts', 'styles', 'clean'], function() {
     // Copy html
     gulp.src(paths.html)
     .pipe(gulp.dest(paths.dist));
 
     // Copy images
-    gulp.src(paths.images)
-    .pipe(gulp.dest(paths.dist + 'images/'));
-
-    // Copy css
-    gulp.src(paths.css + '/*.css')
-    .pipe(gulp.dest(paths.dist + 'css/'));
+    gulp.src([paths.images], {dot: true, base:paths.images})
+    .pipe(gulp.dest(paths.dist + '/images'));
 
     // Copy scripts
-    gulp.src(paths.js)
-    .pipe(gulp.dest(paths.dist + 'js/'));
+    gulp.src([paths.dev+'/bundles/**'], {dot: true, base:paths.dev+'/bundles'})
+    .pipe(gulp.dest(paths.dist+'/bundles'));
+
+
   });
-  gulp.task('startProdServer', function() {
+  gulp.task('startProdServer', ['scripts', 'styles', 'clean', 'copy'], function() {
     connect.server({
       port: 9003,
       root: 'dist'
@@ -152,5 +131,5 @@
   //## 
   // Server Tasks 
   //## 
-  gulp.task('default', ['styles', 'prefix', 'clean', 'copy', 'startProdServer']);
-  gulp.task('serve', ['styles', 'lint', 'watch', 'prefix', 'browserSyncStatic']) 
+  gulp.task('default', ['cleanDevBundles', 'scripts', 'styles', 'clean', 'copy', 'startProdServer']);
+  gulp.task('serve', ['cleanDevBundles', 'scripts', 'styles', 'watch', 'browserSyncStatic']) 
