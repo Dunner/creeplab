@@ -142,7 +142,7 @@
     gulp.src(paths.js)
     .pipe(gulp.dest(paths.dist + 'js/'));
   });
-  gulp.task('productionserver', function() {
+  gulp.task('startProdServer', function() {
     connect.server({
       port: 80,
       root: 'dist'
@@ -152,5 +152,5 @@
   //## 
   // Server Tasks 
   //## 
-  gulp.task('default', ['clean', 'copy', 'productionserver']);
+  gulp.task('default', ['styles', 'prefix', 'clean', 'copy', 'startProdServer']);
   gulp.task('serve', ['styles', 'lint', 'watch', 'prefix', 'browserSyncStatic']) 
