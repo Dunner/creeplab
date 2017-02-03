@@ -41,6 +41,7 @@
     .pipe(jshint()) 
     .pipe(jshint.reporter(stylish)) 
     .pipe(uglify())
+    .on('error', function(){console.log('error, cant minify');this.emit('end');})
     .pipe(concat('bundle.js'))
     .pipe(gulp.dest(paths.dev+'/bundles'));
   });

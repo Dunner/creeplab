@@ -22,9 +22,8 @@ function updateCreepUI(creepData) {
   $('#creep-info-data').empty();
   $('#creep-info-data').append('<p>creepID: '+creepData.id+'</p>');
   $('#creep-info-data').append('<p>Lived: '+creepData.lived+'</p>');
-  $('#creep-info-data').append('<p>Food: '+(Math.round(creepData.food * 1) / 1)+'</p>');
-  $('#creep-info-data').append('<p>Foodtimer: '+(Math.round(creepData.foodTimer * 1) / 1)+'</p>');
-  $('#creep-info-data').append('<p>test: '+(Math.round((creepData.foodTimer+creepData.lived/10) * 1) / 1)+'</p>');
+  $('#creep-info-data').append('<p>Energy: '+(Math.round(creepData.energy * 1) / 1)+'</p>');
+  $('#creep-info-data').append('<p>Time between food: '+creepData.avgTimeBetweenFood+'</p>');
   var layers = creepData.network.layers;
   for (var layerName in (layers)) {
     if ((layers).hasOwnProperty(layerName)) {
@@ -43,9 +42,12 @@ function updateCreepUI(creepData) {
 
 function initCreepUI(creep) {
   clear();
-  $('#creep-info').append('<div id="creep-info-data"></div>');
-  $('#creep-info').append('<div id="creep-info-network"></div>');
+  controlSelected = false;
 
+  creepInfoElement.append('<div id="creep-info-data"></div>');
+  creepInfoElement.append('<div id="creep-info-network"></div>');
+  $('#creep-info').append('<div id="creep-control-wrapper">Control this creep: </div>');
+  $('<input />', { type: 'checkbox', id: 'creepControl'}).appendTo($('#creep-control-wrapper'));
   if(!creep) return;
   $('#creep-info-network')
     .append('<svg id="svg-lines"></svg>');
@@ -136,6 +138,12 @@ $( "#button-selectrandom" ).click(function() {
   creepSelected = creeps[(Math.floor(Math.random() * creeps.length) + 1)-1];
   game.camera.follow(cameraObject);
   initCreepUI(creepSelected);
+});
+
+$( "body" ).click(function( event ) {
+  if(event.target.id == 'creepControl') {
+    controlSelected = $('#creepControl').prop('checked');
+  }
 });
 
 // //Dragging
