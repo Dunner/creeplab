@@ -8,7 +8,7 @@ function clear() {
   creepInfoElement.empty();
 }
 
-function updateGameInfo(creepData) {
+function updateGameInfo() {
   gameInfoElement.empty();
   gameInfoElement.append('<p>Ticks: '+info.ticks+'</p>');
   gameInfoElement.append('<p>Creeps alive: '+info.creepsAlive+'</p>');
@@ -18,15 +18,17 @@ function updateGameInfo(creepData) {
 }
 
 function updateCreepUI(creep) {
-  if (!creep.data) {return;}
+  if (!creep) {return;}
   $('#creep-info-data').empty();
-  $('#creep-info-data').append('<p>creepID: '+creep.data.id+'</p>');
-  $('#creep-info-data').append('<p>Lived: '+creep.data.lived+'</p>');
-  $('#creep-info-data').append('<p>Energy: '+(Math.round(creep.data.energy * 1) / 1)+'</p>');
-  $('#creep-info-data').append('<p>Time between food: '+creep.data.avgTimeBetweenFood+'</p>');
+  $('#creep-info-data').append('<p>creepID: '+creep.id+'</p>');
+  $('#creep-info-data').append('<p>Lived: '+creep.lived+'</p>');
+  $('#creep-info-data').append('<p>Energy: '+(Math.round(creep.energy * 1) / 1)+'</p>');
+  $('#creep-info-data').append('<p>Time between food: '+creep.avgTimeBetweenFood+'</p>');
   var neurons = creep.brain.neurons;
   neurons.forEach(function(neuron) {
-    $('#'+neuron.layer.name+'-'+neuron.name).html(Math.round(neuron.value * 100) / 100);
+    var neuronEl = $('#'+neuron.layer.name+'-'+neuron.name);
+    neuronEl.css({'border-bottom': Math.round(neuronEl.outerHeight()*neuron.value) + 'px solid lightblue'});
+    neuronEl.html(Math.round(neuron.value * 100) / 100);
   });
 }
 
@@ -38,7 +40,7 @@ function initCreepUI(creep) {
   creepInfoElement.append('<div id="creep-info-network"></div>');
   $('#creep-info').append('<div id="creep-control-wrapper">Control this creep: </div>');
   $('<input />', { type: 'checkbox', id: 'creepControl'}).appendTo($('#creep-control-wrapper'));
-  if(!creep) return;
+  if(!creep) {return;}
   $('#creep-info-network')
     .append('<svg id="svg-lines"></svg>');
 
@@ -62,7 +64,7 @@ function drawSynapses(synapses) {
       y2:300,
       'stroke-width':strokeWidth*4,
       stroke: 'lightblue'
-    }).appendTo("#svg-lines");
+    }).appendTo('#svg-lines');
 
     var line = $('#line'+s);
     var pos1 = $('#'+synapse.neuronFrom.layer.name+'-'+synapse.neuronFrom.name).position();
@@ -94,11 +96,10 @@ function updateSynapses(synapses) {
 
 
 function drawLayers(layers) {
-  for (var layerIndex in (layers)) {
-    var layer = (layers)[layerIndex];
+  layers.forEach(function(layer, layerIndex) {
     var layerName = layer.name;
-    for (var neuronIndex in layer.neurons) {
-      var neuron = layer.neurons[neuronIndex];
+
+    layer.neurons.forEach(function(neuron, neuronIndex) {
       var neuronName = neuron.name;
 
       var neuronEl =  $('<div class="neuron '+layerName+'" id="'+layerName+'-'+neuronName+'">'+neuron.value+'</div>');
@@ -108,25 +109,25 @@ function drawLayers(layers) {
       });
       // neuronEl.drags();
       $('#creep-info-network').append(neuronEl);
-    }
+    });
 
-  }
+  });
 }
 
-$( "#button-selectbest" ).click(function() {
-  creepSelected = Creep.find(info.bestCreep.id).creep;
-  game.camera.follow(cameraObject);
+$( '#button-selectbest' ).click(function() {
+  creepSelected = CreepHandler.creeps[0];
+  Game.camera.follow(cameraObject);
   initCreepUI(creepSelected);
 });
 
-$( "#button-selectrandom" ).click(function() {
-  creepSelected = creeps[(Math.floor(Math.random() * creeps.length) + 1)-1];
-  game.camera.follow(cameraObject);
+$( '#button-selectrandom' ).click(function() {
+  creepSelected = CreepHandler.creeps[(Math.floor(Math.random() * CreepHandler.creeps.length) + 1)-1];
+  Game.camera.follow(cameraObject);
   initCreepUI(creepSelected);
 });
 
-$( "body" ).click(function( event ) {
-  if(event.target.id == 'creepControl') {
+$( 'body' ).click(function( event ) {
+  if(event.target.id === 'creepControl') {
     controlSelected = $('#creepControl').prop('checked');
   }
 });

@@ -1,15 +1,15 @@
 var Utils = {};
 
-  //reverse? property1, property2.
 
 Utils.compare = function(a,b) {
   if (b < a)
-    return 1;
+    {return 1;}
   if (b > a)
-    return -1;
+    {return -1;}
   return 0;
 };
 
+//reverse? property1, property2. nested search property1[proprty2]
 Utils.dynamicSort = function(reverse, property, property2) {
   var sortOrder = 1;
   if(reverse) { sortOrder = -1;}
@@ -23,12 +23,6 @@ Utils.dynamicSort = function(reverse, property, property2) {
     return result * sortOrder;
   };
 
-};
-
-Utils.spawnFood = function(data) {
-  var newFood = game.add.sprite(data.x,data.y, Utils.createBlock(10, 10,'green'));
-  newFood.anchor.setTo(0.5, 0.5);
-  food.push(newFood);
 };
 
 Utils.randomId = function(prepend) {
@@ -50,7 +44,7 @@ Utils.createBlock = function(x, y, color) {
     return textureRegistry[name];
   }
 
-  var bmd = game.add.bitmapData(x, y);
+  var bmd = Game.add.bitmapData(x, y);
   bmd.ctx.fillStyle = color;
   bmd.ctx.fillRect(0,0, x, y);
   textureRegistry[name] = bmd;
@@ -83,7 +77,7 @@ Utils.pointDistance = function(pointA, pointB) {
 };
 
 Utils.lengthDir = function(length, direction) { //vector, magnitude
-  if (direction < 0) direction += 360;
+  if (direction < 0) {direction += 360;}
 
   return {
     x: length*Math.cos(direction),
@@ -101,10 +95,10 @@ Utils.normalize = function(value, min, max) {
 };
 
 Utils.denormalize = function(normalized, min, max) {
-  var denormalized = (value - min) / (max - min);
+  var denormalized = (normalized - min) / (max - min);
   return denormalized;
 };
 
 Utils.RGBtoHEX = function(r, g, b) {
-  return r << 16 | g << 8 | b;
+  return (r << 16 | g << 8 | b);
 };

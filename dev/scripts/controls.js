@@ -8,12 +8,12 @@ var mouse,
 var Controls = {};
 
 Controls.init = function() {
-  upKey = game.input.keyboard.addKey(Phaser.Keyboard.W);
-  downKey = game.input.keyboard.addKey(Phaser.Keyboard.S);
-  leftKey = game.input.keyboard.addKey(Phaser.Keyboard.A);
-  rightKey = game.input.keyboard.addKey(Phaser.Keyboard.D);
-  leftClick = game.input.activePointer.leftButton;
-  game.input.mouse.mouseWheelCallback = mouseWheel;
+  upKey = Game.input.keyboard.addKey(Phaser.Keyboard.W);
+  downKey = Game.input.keyboard.addKey(Phaser.Keyboard.S);
+  leftKey = Game.input.keyboard.addKey(Phaser.Keyboard.A);
+  rightKey = Game.input.keyboard.addKey(Phaser.Keyboard.D);
+  leftClick = Game.input.activePointer.leftButton;
+  Game.input.mouse.mouseWheelCallback = mouseWheel;
 };
 
 

@@ -1,17 +1,11 @@
 
-var Creep = {};
+var CreepHandler = {
+  creeps: []
+};
 
-Creep.create = function(data) {
-  var collisionBounds = game.add.sprite(data.x,data.y, Utils.createBlock(40, 40,'black'));
-  collisionBounds.anchor.setTo(0.5);
-  var newCreep = game.add.sprite(data.x,data.y, Utils.createBlock(20, 20,'white'));
-  newCreep.anchor.setTo(0.5);
-  newCreep.collisionBounds = collisionBounds;
-  newCreep.inputEnabled = true;
-  newCreep.speed = 0;
-  newCreep.angle = 0;
-  newCreep.data = {
-    id: Utils.randomId('creep'),
+var Creep = function(data){
+  Object.assign(this, {
+    id: Utils.randomId('Creep'),
     energy: 50,
     fitness: 0,
     lived: 0,
@@ -22,203 +16,235 @@ Creep.create = function(data) {
     timeSinceLastFood: 0,
     brain : {},
     traits: {
-      color: 0
-    }
-  };
+      color: Math.random()
+    },
+    textStyle: { font: '32px Arial', fill: 'white', align: 'center' }
+  });
+
   if (!data.brain) {
-    newCreep.brain = new Brain();
-    newCreep.brain.populate(Layers);
+    this.brain = new Brain();
+    this.brain.populate(Layers);
   } else {
-    newCreep.brain = data.brain;
+    this.brain = data.brain;
   }
 
-  var style = { font: "32px Arial", fill: "white",align: "center", };
-  newCreep.text = game.add.text(0, 0, "1", style);
-  newCreep.text.anchor.set(0.5, 0);
-  newCreep.data.color = Math.random();
+  this.text = Game.add.text(0, 0, '1', this.textStyle);
+  this.text.anchor.set(0.5, 0);
 
-  newCreep.events.onInputDown.add(function() {
-    initCreepUI(newCreep);
-    creepSelected = newCreep;
+  this.object = Game.add.image(data.x,data.y, Utils.createBlock(20, 20,'white'));
+  this.object.anchor.setTo(0.5);
+  this.object.inputEnabled = true;
+  this.object.speed = 0;
+  this.object.angle = 0;
+  var creep = this;
+  this.object.events.onInputDown.add(function() {
+    initCreepUI(creep);
+    creepSelected = creep;
   });
-  creeps.push(newCreep);
-  return newCreep;
 };
 
-Creep.update = function(creep) {
-  creep.scale.setTo(creep.data.energy/100, creep.data.energy/100);
+CreepHandler.init = function(data) {
+  this.minimumCreeps = data.minimumCreeps;
+};
 
-  creep.collisionBounds.position = creep.position;
-  creep.collisionBounds.alpha = 0.1;
-  creep.collisionBounds.angle = creep.angle;
-  creep.collisionBounds.scale.setTo(creep.scale.x, creep.scale.y);
+CreepHandler.update = function() {
+  for (var i = 0; i < this.creeps.length; i++) {
+    this.creeps[i].update();
+  }
 
-  creep.data.timeSinceLastFood+=0.1;
-  creep.data.lived++;
+  //Spawn creeps if too few
+  if (this.creeps.length < this.minimumCreeps) {
+    var missingCreeps = this.minimumCreeps - this.creeps.length;
+    for (var e = 0; e < missingCreeps; e++) {
+      this.createCreep(Utils.randomSpawn(100,100,2800,2800));
+    }
+  }
+};
 
-  creep.speed = Math.round(creep.speed * 100) / 100;
-  creep.angle = Math.round(creep.angle * 100) / 100;
+CreepHandler.createCreep = function(data) {
+  var creep = new Creep(data);
+  this.creeps.push(creep);
+  return creep;
+};
 
-  creep.text.position = creep.position;
+CreepHandler.removeCreep = function(creep) {
+  this.creeps.splice(this.creeps.indexOf(creep),1);
+};
+
+CreepHandler.findCreep = function(id) {
+  for (var i = 0; i < this.creeps.length; i++) {
+    if (this.creeps[i].id === id) {
+      return this.creeps[i];
+    }
+  }
+  return false;
+};
+
+Creep.prototype.kill = function() {
+  this.object.destroy();
+  this.text.destroy();
+  this.object.events.destroy();
+  CreepHandler.removeCreep(this);
+};
+
+Creep.prototype.update = function() {
+  //TODO
+  var creep = this;
+
+  creep.object.scale.setTo(creep.energy/100, creep.energy/100);
+
+  creep.timeSinceLastFood+=0.1;
+  creep.lived++;
+
+  creep.object.speed = Math.round(creep.object.speed * 100) / 100;
+  creep.object.angle = Math.round(creep.object.angle * 100) / 100;
+
+  creep.text.position = creep.object.position;
   creep.text.alpha = 0;
 
-  if (creep.speed) {
-    var moveVector = Utils.lengthDir(creep.speed, Utils.angle360(creep.angle) * Math.PI / 180);
-    creep.x += moveVector.x;
-    creep.y += moveVector.y;
+  if (creep.object.speed) {
+    var moveVector = Utils.lengthDir(creep.object.speed, Utils.angle360(creep.object.angle) * Math.PI / 180);
+    creep.object.x += moveVector.x;
+    creep.object.y += moveVector.y;
   }
-  creep.data.energy -= 0.01;
-  if (creep.data.energy <= 0) {
-    Creep.kill(creep.data.id);
+  creep.energy -= 0.01;
+  if (creep.energy <= 0) {
+    this.kill();
   }
 
-  if (creep.data.lived % 15 === 0) {
-    for(var c=0;c<creeps.length;c++){
-      if (creep !== creeps[c]) {
-        if (creep.alive && creeps[c].alive && Utils.checkOverlap(creep, creeps[c]) && creep.data.energy > 190) {
-          creep.data.energy-=100;
-          game.add.tween(creep.scale).to({ x: creep.data.energy/100, y: creep.data.energy/100}, 1000).start();
-          var newBrain = new Brain();
-          newBrain.crossGenes(creep.brain, creeps[c].brain);
-          var newCreep = Creep.create({
-            x:creep.x,
-            y:creep.y,
-            brain: newBrain
-          });
-          //find between color
-          newCreep.data.color = (creep.data.color+creeps[c].data.color)/2;
-          newCreep.data.energy = 100;
+  if (creep.lived % 15 === 0) {
+    for(var c=0;c<CreepHandler.creeps.length;c++){
+      if (creep !== CreepHandler.creeps[c]) {
+        if (creep.object.alive && CreepHandler.creeps[c].object.alive && creep.energy > 190) {
+          var distToCreep = Utils.pointDistance(creep.object.position, CreepHandler.creeps[c].object.position);
+          if (distToCreep < 20) {
+            creep.energy-=100;
+            Game.add.tween(creep.object.scale).to({ x: creep.energy/100, y: creep.energy/100}, 1000).start();
+            var newBrain = new Brain();
+            newBrain.crossGenes(creep.brain, CreepHandler.creeps[c].brain);
+            var newCreep = CreepHandler.createCreep({
+              x:creep.object.x,
+              y:creep.object.y,
+              brain: newBrain
+            });
+            //find between color
+            newCreep.traits.color = (creep.traits.color+CreepHandler.creeps[c].traits.color)/2;
+            newCreep.energy = 100;
+          }
+
         }
       }
     }
   }
 
   var distToClosestFood = 999,
-      closestFoodObject,
+      closestFood,
       foodAngle = 0;
-  if (creep.data.lived % 15 === 0) {
-    for(var x=0;x<food.length;x++){
+  if (creep.lived % 15 === 0) {
+    for(var x=0;x<FoodHandler.food.length;x++){
+      var food = FoodHandler.food[x];
+      if (food.object.alive && creep.object.alive) {
 
-      if (food[x].alive && creep.alive) {
-
-        var foodDist = Utils.pointDistance(creep.position, food[x].position);
+        var foodDist = Utils.pointDistance(creep.object.position, food.object.position);
         if (foodDist < distToClosestFood) {
           distToClosestFood = foodDist;
-          closestFoodObject = food[x];
+          closestFood = food;
         }
 
-        if (Utils.checkOverlap(creep, food[x])) {
-          food[x].destroy();
-          food.splice(x,1);
-
-          if (creep.data.energy+50 < 250) {
-            creep.data.energy += 50;
-            game.add.tween(creep.scale).to({ x: creep.data.energy/100, y: creep.data.energy/100}, 1000).start();
-          } else {
-
-          }
-
-          creep.data.timesBetweenFood.push(creep.data.timeSinceLastFood);
-          creep.data.timeSinceLastFood = 0;
-          if (creep.data.timesBetweenFood.length > 10) {
-            if (!creep.data.sustainable) {
-              creep.data.sustainable = true;
-              matingPool.push(creep.data);
-              console.log(matingPool.length);
-            }
-            creep.data.avgTimeBetweenFood = 0;
-            creep.data.timesBetweenFood.slice(0,1);
-            for (var f = 0; f < creep.data.timesBetweenFood.length; f++) {
-              creep.data.avgTimeBetweenFood+=creep.data.timesBetweenFood[f];
-            }
-            creep.data.avgTimeBetweenFood= Math.round(creep.data.avgTimeBetweenFood/creep.data.timesBetweenFood.length);
-          }
-
+        if (foodDist < 20) {
+          creep.eat(food);
+          food.kill(food.id);
         }
       }
     }
 
   }
 
-  if (closestFoodObject) {
-    creep.data.foodDist = distToClosestFood;
+  if (closestFood) {
+    creep.foodDist = distToClosestFood;
 
     //calculate relative angle difference between creep and food
-    var cAngle = Utils.angle360(creep.angle);
-    var fAngle = Utils.angle360(Utils.pointDirection(creep.position, closestFoodObject.position));
+    var cAngle = Utils.angle360(creep.object.angle);
+    var fAngle = Utils.angle360(Utils.pointDirection(creep.object.position, closestFood.object.position));
 
     var angleDiff = (cAngle - fAngle + 360) % 360;
-    if (angleDiff > 180) angleDiff = -360 + angleDiff;
+    if (angleDiff > 180) {angleDiff = -360 + angleDiff;}
     angleDiff = Math.round(angleDiff);
 
-    creep.data.foodAngle = angleDiff;
+    creep.foodAngle = angleDiff;
     creep.text.setText(angleDiff);
   }
 
-  brainGo(creep);
-  if (creepSelected && creep.data.id == creepSelected.data.id) {
+  if (creep.lived % 15 === 0) {
+    brainGo(creep);
+  }
+  
+  if (creepSelected && creep.id === creepSelected.id) {
     updateCreepUI(creep);
   }
 
-  if (controlSelected && creepSelected && creep.data.id == creepSelected.data.id) {
+  if (controlSelected && creepSelected && creep.id === creepSelected.id) {
     //Control creep
-    Creep.control(creep);
+    creep.control();
   } else {
     //Creep controls itself
     var speedOutput = creep.brain.findOutput('speed').value;
-    creep.speed = speedOutput*2.5;
-    creep.data.energy -= creep.speed/10;
+    creep.object.speed = speedOutput*2.5;
+    creep.energy -= creep.object.speed/10;
     var angleOutput = creep.brain.findOutput('angle').value;
     var relativeChange = angleOutput < 0.5 ? -1 : 1;
-    creep.angle += relativeChange * angleOutput*6;
+    creep.object.angle += relativeChange * angleOutput*6;
     
-    creep.tint = creep.data.color * 0xffffff;
+    creep.object.tint = creep.traits.color * 0xffffff;
   }
 
 };
 
 function brainGo(creep) {
-  creep.brain.findInput('speed').setValue(creep.speed);
-  creep.brain.findInput('energy').setValue(creep.data.energy);
-  creep.brain.findInput('foodAngle').setValue(creep.data.foodAngle);
-  creep.brain.findInput('foodDist').setValue(creep.data.foodDist);
+  creep.brain.findInput('speed').setValue(creep.object.speed);
+  creep.brain.findInput('energy').setValue(creep.energy);
+  creep.brain.findInput('foodAngle').setValue(creep.foodAngle);
+  creep.brain.findInput('foodDist').setValue(creep.foodDist);
   creep.brain.think();
 }
 
 
 
-Creep.kill = function(id) {
-  var creep = Creep.find(id);
-  var creepIndex = creep.creepIndex;
-  creep = creep.creep;
-  creep.text.destroy();
-  creep.collisionBounds.destroy();
-  creep.events.destroy();
-  creep.destroy();
-  creeps.splice(creepIndex,1);
-};
+Creep.prototype.eat = function() {
+  var creep = this;
+  if (creep.energy+50 < 250) {
+    creep.energy += 50;
+    Game.add.tween(creep.object.scale).to({ x: creep.energy/100, y: creep.energy/100}, 1000).start();
+  } 
 
-Creep.find = function(id) {
-  for (var i = 0; i < creeps.length; i++) {
-    if (creeps[i].data.id === id) {
-      return {creep:creeps[i], creepIndex:i};
+  creep.timesBetweenFood.push(creep.timeSinceLastFood);
+  creep.timeSinceLastFood = 0;
+  if (creep.timesBetweenFood.length > 10) {
+    if (!creep.sustainable) {
+      creep.sustainable = true;
     }
+    creep.avgTimeBetweenFood = 0;
+    creep.timesBetweenFood.slice(0,1);
+    for (var f = 0; f < creep.timesBetweenFood.length; f++) {
+      creep.avgTimeBetweenFood+=creep.timesBetweenFood[f];
+    }
+    creep.avgTimeBetweenFood= Math.round(creep.avgTimeBetweenFood/creep.timesBetweenFood.length);
   }
-  return false;
 };
 
-Creep.control = function(creep) {
-  creepSelected.data.energy = 50;
-  if(upKey.isDown && creepSelected.speed < 3) {
-    creepSelected.speed += 0.1;
-  } else if(creepSelected.speed > 0.05) {
-    creepSelected.speed -= 0.05;
+
+Creep.prototype.control = function() {
+  creepSelected.energy = 50;
+  if(upKey.isDown && creepSelected.object.speed < 3) {
+    creepSelected.object.speed += 0.1;
+  } else if(creepSelected.object.speed > 0.05) {
+    creepSelected.object.speed -= 0.05;
   }
 
   if(rightKey.isDown) {
-    creepSelected.angle += 3;
+    creepSelected.angle.angle += 3;
   }
    if(leftKey.isDown) {
-    creepSelected.angle -= 3;
+    creepSelected.angle.angle -= 3;
   } 
 };

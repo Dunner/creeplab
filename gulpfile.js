@@ -38,7 +38,7 @@
   // Process scripts and concatenate them into one output file
   gulp.task('scripts', ['cleanDevBundles'], function() {
     return gulp.src(paths.scripts + '/**/*.js')
-    .pipe(jshint()) 
+    .pipe(jshint('.jshintrc')) 
     .pipe(jshint.reporter(stylish)) 
     .pipe(uglify())
     .on('error', function(){console.log('error, cant minify');this.emit('end');})

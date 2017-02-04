@@ -1,6 +1,6 @@
 /*globals Phaser:false */
 
-var game,
+var Game = {},
     ticks = 0,
     mutations = 0,
     creeps = [],
@@ -8,16 +8,14 @@ var game,
     creepSelected,
     controlSelected = false,
     textureRegistry = {},
-    matingPool = [],
     bestWeights = {
       lived: 0,
       weights: {}
     },
     info = {},
     
-    crossOverValue = 2300,
-    minimumCreeps = 100,
-    minimumFood = 200,
+    minimumCreeps = 300,
+    minimumFood = 300,
     delta = 0.5;
 
 
@@ -27,19 +25,21 @@ $(function() {
   var canvasElement = $('#spetsad-canvas');
 
   function preload() {
-    game.stage.disableVisibilityChange = true;
-    game.time.advancedTiming = true;
+    Game.stage.disableVisibilityChange = true;
+    Game.time.advancedTiming = true;
   }
 
   function create() {
-    // game.add.tileSprite(0, 0, canvasElement[0].offsetWidth, canvasElement[0].offsetHeight, 'background');
-    game.stage.backgroundColor = '#222';
-    game.world.setBounds(0, 0, 3000, 3000);
+    // Game.add.tileSprite(0, 0, canvasElement[0].offsetWidth, canvasElement[0].offsetHeight, 'background');
+    Game.stage.backgroundColor = '#222';
+    Game.world.setBounds(0, 0, 3000, 3000);
 
     Controls.init();
     Camera.init();
+    FoodHandler.init({minimumFood: minimumFood});
+    CreepHandler.init({minimumCreeps: minimumCreeps});
 
-    selectObject = game.add.sprite(0,0, Utils.createBlock(50, 50,'lightblue'));
+    selectObject = Game.add.sprite(0,0, Utils.createBlock(50, 50,'lightblue'));
     selectObject.anchor.setTo(0.5, 0.5);
 
   }
@@ -47,47 +47,28 @@ $(function() {
   function update() {
     ticks++;
 
-    Camera.drag(game.input.mousePointer);
-    Camera.drag(game.input.pointer1);
+    Camera.drag(Game.input.mousePointer);
+    Camera.drag(Game.input.pointer1);
     Camera.update();
     Controls.update();
-
+    FoodHandler.update();
+    CreepHandler.update();
     //CreepUpdate
-    for (var i = 0; i < creeps.length; i++) {
-      var creep = creeps[i];
-      Creep.update(creep);
-    }
-
-    //Spawn creeps if too few
-    if (creeps.length < minimumCreeps) {
-      var missingCreeps = minimumCreeps - creeps.length;
-      for (var e = 0; e < missingCreeps; e++) {
-        Creep.create(Utils.randomSpawn(100,100,2800,2800));
-      }
-    }
-
-    if (food.length < minimumFood) {
-      var missingFood = minimumFood - food.length;
-      for (var b = 0; b < missingFood; b++) {
-        Utils.spawnFood(Utils.randomSpawn(100,100,2800,2800));
-      }
-    }
 
 
-    game.debug.text(game.time.fps || '--', 2, 14, "#00ff00");
+    Game.debug.text(Game.time.fps || '--', 2, 14, '#00ff00');
     //sort creeps by lived longest
 
-    if (matingPool.length > 5) {
-      matingPool.sort(Utils.dynamicSort(false, 'avgTimeBetweenFood'));
-      creeps.sort(Utils.dynamicSort(false, 'data', 'avgTimeBetweenFood'));
+    if (ticks % 50 === 0) {
+      creeps.sort(Utils.dynamicSort(false, 'avgTimeBetweenFood'));
     }
 
     info = {
       mutations: mutations,
-      creepsAlive: creeps.length,
+      creepsAlive: CreepHandler.creeps.length,
       bestCreep: {
-        lived: creeps[0].data.lived,
-        id: creeps[0].data.id
+        lived: CreepHandler.creeps[0].lived,
+        id: CreepHandler.creeps[0].id
       },
       bestAllTime: bestWeights.lived,
       ticks: ticks
@@ -95,7 +76,13 @@ $(function() {
     updateGameInfo();
   }
 
-  game = new Phaser.Game(canvasElement[0].offsetWidth, canvasElement[0].offsetHeight, Phaser.AUTO, 'spetsad-canvas', {preload: preload, create: create, update: update});
+  Game = new Phaser.Game(
+    canvasElement[0].offsetWidth,
+    canvasElement[0].offsetHeight,
+    Phaser.AUTO, 'spetsad-canvas', {
+      preload: preload, create: create, update: update
+    }
+  );
 
   
 });
@@ -103,12 +90,12 @@ $(function() {
 
 function mouseWheel(event) {
   var scale;
-  if (game.input.mouse.wheelDelta < 0) {
+  if (Game.input.mouse.wheelDelta < 0) {
     if (zoomLevel > 0.42) {
       scale = zoomLevel - 0.2;
     }
   }
-  if (game.input.mouse.wheelDelta > 0) {
+  if (Game.input.mouse.wheelDelta > 0) {
     if (zoomLevel < 2) {
       scale = zoomLevel + 0.2;
     }

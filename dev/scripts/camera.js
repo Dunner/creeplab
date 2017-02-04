@@ -1,5 +1,5 @@
 var cameraObject,
-    o_mcamera,
+    mouseCamera,
     zoomLevel = 1;
 
 var Camera = {};
@@ -8,42 +8,42 @@ Camera.init = function() {
   Camera.zoomTo(0.3, 100);
 
   setTimeout(function(){
-    game.camera.x = game.camera.view.x = -250;
-    game.camera.y = game.camera.view.y = 0;
+    Game.camera.x = Game.camera.view.x = -250;
+    Game.camera.y = Game.camera.view.y = 0;
   }, 100);
 
-  cameraObject = game.add.sprite(0,0, Utils.createBlock(0, 0,'red'));
+  cameraObject = Game.add.sprite(0,0, Utils.createBlock(0, 0,'red'));
   cameraObject.anchor.setTo(0.5, 0.5);
 };
 
 
 Camera.update = function() {
-  game.camera.bounds = 1;
+  Game.camera.bounds = 1;
 
-  if (creepSelected && creepSelected.alive) {
+  if (creepSelected && creepSelected.object.alive) {
     selectObject.alpha = 1;
-    selectObject.position = creepSelected.position;
+    selectObject.position = creepSelected.object.position;
     //Camera
-    if (cameraObject.x < creepSelected.x) {
-      cameraObject.x += ( Math.abs(cameraObject.x - creepSelected.x)/10 ) * delta;
+    if (cameraObject.x < creepSelected.object.x) {
+      cameraObject.x += ( Math.abs(cameraObject.x - creepSelected.object.x)/10 ) * delta;
     }
-    if (cameraObject.x > creepSelected.x) {
-      cameraObject.x -= ( Math.abs(cameraObject.x - creepSelected.x)/10 ) * delta;
+    if (cameraObject.x > creepSelected.object.x) {
+      cameraObject.x -= ( Math.abs(cameraObject.x - creepSelected.object.x)/10 ) * delta;
     }
     
-    if (cameraObject.y < creepSelected.y) {
-      cameraObject.y += ( Math.abs(cameraObject.y - creepSelected.y)/10 ) * delta;
+    if (cameraObject.y < creepSelected.object.y) {
+      cameraObject.y += ( Math.abs(cameraObject.y - creepSelected.object.y)/10 ) * delta;
     }
-    if (cameraObject.y > creepSelected.y) {
-      cameraObject.y -= ( Math.abs(cameraObject.y - creepSelected.y)/10 ) * delta;
+    if (cameraObject.y > creepSelected.object.y) {
+      cameraObject.y -= ( Math.abs(cameraObject.y - creepSelected.object.y)/10 ) * delta;
     }
   } else {
     selectObject.alpha = 0;
   }
 
-  if (game.camera.target === null) {
-    cameraObject.x = game.camera.x / game.camera.scale.scale+ (game.camera.view.halfWidth/game.camera.scale.scale);
-    cameraObject.y = game.camera.y / game.camera.scale.scale+ (game.camera.view.halfHeight/game.camera.scale.scale);
+  if (Game.camera.target === null) {
+    cameraObject.x = Game.camera.x / Game.camera.scale.scale+ (Game.camera.view.halfWidth/Game.camera.scale.scale);
+    cameraObject.y = Game.camera.y / Game.camera.scale.scale+ (Game.camera.view.halfHeight/Game.camera.scale.scale);
   }
 };
 
@@ -51,57 +51,57 @@ Camera.update = function() {
 //no use atm
 Camera.panTo =  function(position) {
   var helper;
-  helper = Math.max(game.camera.width, game.camera.height) / 8;
-  game.camera.deadzone = new Phaser.Rectangle((game.camera.width - helper) / 2, (game.camera.height - helper) / 2, helper, helper);
-  game.camera.view.x = position.x - game.camera.view.halfWidth;
-  game.camera.view.y = position.y - game.camera.view.halfHeight;
+  helper = Math.max(Game.camera.width, Game.camera.height) / 8;
+  Game.camera.deadzone = new Phaser.Rectangle((Game.camera.width - helper) / 2, (Game.camera.height - helper) / 2, helper, helper);
+  Game.camera.view.x = position.x - Game.camera.view.halfWidth;
+  Game.camera.view.y = position.y - Game.camera.view.halfHeight;
   Camera.zoomTo(1,300);
 };
 
 Camera.zoomTo =  function(scale, duration) {
   var mouseOffset = Camera.mouseFromCenter(),
-      cview = game.camera.view;
+      cview = Game.camera.view;
     if (scale > zoomLevel) {
-      game.add.tween(cview).to({
+      Game.add.tween(cview).to({
         x : cview.x + (cview.width*scale - cview.width*zoomLevel) + mouseOffset.x*scale,
         y : cview.y + (cview.height*scale - cview.height*zoomLevel) + mouseOffset.y*scale,
       }, duration).start();
     }
     if (scale < zoomLevel) {
-      game.add.tween(cview).to({
+      Game.add.tween(cview).to({
         x : cview.x - (cview.width*zoomLevel - cview.width*scale),
         y : cview.y - (cview.height*zoomLevel - cview.height*scale),
       }, duration).start();
     }
-  game.add.tween(game.camera.scale).to({
+  Game.add.tween(Game.camera.scale).to({
     x: scale, y: scale, scale:scale
   }, duration).start();
-  // game.camera.follow(cameraObject);
+  // Game.camera.follow(cameraObject);
   // setTimeout(function(){
-  //   game.camera.unfollow();
+  //   Game.camera.unfollow();
   // },duration)
   zoomLevel = scale;
 };
 
-Camera.drag =  function(o_pointer) {
-  if (!o_pointer.timeDown) { return; }
-  if (o_pointer.isDown) {
-    game.camera.unfollow();
-    if (o_mcamera) {
-      game.camera.x += o_mcamera.x - o_pointer.position.x;
-      game.camera.y += o_mcamera.y - o_pointer.position.y;
+Camera.drag =  function(pointer) {
+  if (!pointer.timeDown) { return; }
+  if (pointer.isDown) {
+    Game.camera.unfollow();
+    if (mouseCamera) {
+      Game.camera.x += mouseCamera.x - pointer.position.x;
+      Game.camera.y += mouseCamera.y - pointer.position.y;
     }
-    o_mcamera = o_pointer.position.clone();
+    mouseCamera = pointer.position.clone();
   }
-  if (o_pointer.isUp) { o_mcamera = null; }
+  if (pointer.isUp) { mouseCamera = null; }
 };
 
 Camera.mouseFromCenter = function() {
   var xOffset, yOffset;
-  var cameraX = game.camera.view.width/2;
-  var cameraY = game.camera.view.height/2;
-  var mouseX = game.input.mousePointer.x;
-  var mouseY = game.input.mousePointer.y;
+  var cameraX = Game.camera.view.width/2;
+  var cameraY = Game.camera.view.height/2;
+  var mouseX = Game.input.mousePointer.x;
+  var mouseY = Game.input.mousePointer.y;
 
   xOffset = mouseX - cameraX;
   yOffset = mouseY - cameraY;

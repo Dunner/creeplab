@@ -1,8 +1,76 @@
+
+var Layers = [
+  {
+    name: 'inputs',
+    neurons: [
+      {name: 'speed', value:0, min:0, max:5},
+      {name: 'energy', value:50, min:0, max:1000},
+      {name: 'foodAngle', value:0, min:-180, max:180},
+      {name: 'foodDist', value:0, min:0, max:5000},
+    ]
+  },
+  {
+    name: 'hidden1',
+    neurons: [
+      {name: 0, value:0, type: 'sum'},
+      {name: 1, value:0, type: 'sum'},
+      {name: 2, value:0, type: 'sum'},
+      {name: 3, value:0, type: 'sum'},
+      {name: 4, value:1, type: 'const'}
+    ]
+  },
+  {
+    name: 'output',
+    neurons: [
+      {name: 'speed', value:0},
+      {name: 'angle', value:0}
+    ]
+  }
+];
+
 var Brain = function() {
   this.id = Math.random().toString(36).substr(2, 9);
   this.layers = [];
   this.neurons = [];
   this.synapses = [];
+};
+
+var Layer = function(name) {
+  this.name = name;
+  this.neurons = [];
+};
+
+var Neuron = function(layer, neuronData) {
+  var neuron = this;
+  Object.keys(neuronData).forEach(function(key) {
+    neuron[key] = neuronData[key];
+  });
+  this.layer = layer;
+  this.synapsesIn = [];
+  this.synapsesOut = [];
+  
+  this.calc = function() {
+    var synapsesInSum = 0;
+    neuron.synapsesIn.forEach(function(synapse) {
+      synapsesInSum += synapse.calc();
+    });
+    if (neuron.layer.name !== 'inputs' && neuron.type !== 'const') {
+      this.value = Math.round(Utils.sigmoid(synapsesInSum) * 100)/100;
+    }
+  };
+};
+
+var Synapse = function(neuronFrom, neuronTo, weight) {
+  var synapse = this;
+  this.neuronFrom = neuronFrom;
+  this.neuronTo = neuronTo;
+  this.input = neuronFrom.value;
+  this.weight = weight || Math.random() * ( 1 - (-1) ) + -1;
+  
+  this.calc = function() {
+    synapse.input = neuronFrom.value;
+    return Math.round((synapse.input * synapse.weight) * 100)/100;
+  };
 };
 
 Brain.prototype.populate = function(layers) {
@@ -36,11 +104,9 @@ Brain.prototype.crossGenes = function(brain1, brain2) {
 
 Brain.prototype.mutate = function(nmutations) {
   for (var i = 0; i < nmutations; i++) {
-    synapses = this.synapses;
-    var randomSynapse = Math.floor(Math.random() * synapses.length) + 1;
+    var randomSynapse = Math.floor(Math.random() * this.synapses.length) + 1;
     var relativeChange = Math.random() < 0.5 ? -0.05 : 0.05;
-    console.log('mutate:', randomSynapse-1, synapses.length, relativeChange);
-    synapses[randomSynapse-1].weight += relativeChange;
+    this.synapses[randomSynapse-1].weight += relativeChange;
   }
 };
 
@@ -53,7 +119,7 @@ Brain.prototype.think = function() {
 Brain.prototype.findInput = function(name) {
   for (var i = 0; i < this.layers[0].neurons.length; i++) {
     var neuron = this.layers[0].neurons[i];
-    if (neuron.name == name) {
+    if (neuron.name === name) {
       return neuron;
     }
   }
@@ -62,7 +128,7 @@ Brain.prototype.findInput = function(name) {
 Brain.prototype.findOutput = function(name) {
   for (var i = 0; i < this.layers[2].neurons.length; i++) {
     var neuron = this.layers[2].neurons[i];
-    if (neuron.name == name) {
+    if (neuron.name === name) {
       return neuron;
     }
   }
@@ -85,62 +151,21 @@ Brain.prototype.createNeuron = function(layer, neuron) {
   return neuron;
 };
 
-var Layer = function(name) {
-  this.name = name;
-  this.neurons = [];
-};
-
-var Neuron = function(layer, neuronData) {
-  var neuron = this;
-  Object.keys(neuronData).forEach(function(key) {
-    neuron[key] = neuronData[key];
-  });
-  this.layer = layer;
-  this.synapsesIn = [];
-  this.synapsesOut = [];
-  this.value = 0;
-  
-  // this.activate = function(t) {
-  //   return 1/(1 + Math.pow(Math.E, -t));
-  // };
-
-  this.calc = function() {
-    var synapsesOutputsSum = 0;
-    neuron.synapsesIn.forEach(function(synapse) {
-      synapsesOutputsSum += synapse.calc();
-    });
-    if (neuron.layer.name !== 'inputs') {
-      this.value = Math.round(Utils.sigmoid(synapsesOutputsSum) * 100)/100;
-    }
-  };
-};
-
 Neuron.prototype.setValue = function(value){
   this.value = Math.round(Utils.normalize(value, this.min, this.max) * 100)/100;
 };
 
 Neuron.prototype.attachSynapse = function(synapse, direction){
-  if (direction == 'in') {this.synapsesIn.push(synapse);}
-  if (direction == 'out') {this.synapsesOut.push(synapse);}
+  if (direction === 'in') {this.synapsesIn.push(synapse);}
+  if (direction === 'out') {this.synapsesOut.push(synapse);}
 };
 
 Neuron.prototype.detachSynapse = function(synapse, direction){
-  if (direction == 'in') {this.synapsesIn.push(synapse);}
-  if (direction == 'out') {this.synapsesOut.push(synapse);}
+  if (direction === 'in') {this.synapsesIn.push(synapse);}
+  if (direction === 'out') {this.synapsesOut.push(synapse);}
 };
 
-var Synapse = function(neuronFrom, neuronTo, weight) {
-  var synapse = this;
-  this.neuronFrom = neuronFrom;
-  this.neuronTo = neuronTo;
-  this.input = neuronFrom.value;
-  this.weight = weight || Math.random() * ( 1 - (-1) ) + -1;
-  
-  this.calc = function() {
-    synapse.input = neuronFrom.value;
-    return Math.round((synapse.input * synapse.weight) * 100)/100;
-  };
-};
+
 
 Synapse.prototype.changeWeight = function(input){
   //TODO
@@ -151,34 +176,7 @@ Synapse.prototype.randomizeWeight = function(){
 };
 
 Synapse.prototype.mutate = function(){
-  this.input = input;
+  //TODO
+
 };
 
-var Layers = [
-  {
-    name: 'inputs',
-    neurons: [
-      {name: 'speed', value:0, min:0, max:5},
-      {name: 'energy', value:50, min:0, max:1000},
-      {name: 'foodAngle', value:0, min:-180, max:180},
-      {name: 'foodDist', value:0, min:0, max:5000},
-    ]
-  },
-  {
-    name: 'hidden1',
-    neurons: [
-      {name: 0, value:0, type: 'sum'},
-      {name: 1, value:0, type: 'sum'},
-      {name: 2, value:0, type: 'sum'},
-      {name: 3, value:0, type: 'sum'},
-      {name: 4, value:1, type: 'const'}
-    ]
-  },
-  {
-    name: 'output',
-    neurons: [
-      {name: 'speed', value:0},
-      {name: 'angle', value:0}
-    ]
-  }
-];
