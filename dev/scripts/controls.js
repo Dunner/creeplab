@@ -13,10 +13,17 @@ Controls.init = function() {
   leftKey = Game.input.keyboard.addKey(Phaser.Keyboard.A);
   rightKey = Game.input.keyboard.addKey(Phaser.Keyboard.D);
   leftClick = Game.input.activePointer.leftButton;
-  Game.input.mouse.mouseWheelCallback = mouseWheel;
+
+  Game.input.mouse.mouseWheelCallback = function(event) {
+    var scale;
+    if (Game.input.mouse.wheelDelta < 0) {
+      if (zoomLevel > 0.42) { scale = zoomLevel - 0.2; }}
+    if (Game.input.mouse.wheelDelta > 0) {
+      if (zoomLevel < 2) { scale = zoomLevel + 0.2; }}
+    if (scale) { Camera.zoomTo(scale,225); }
+  };
 };
 
 
-Controls.update = function() {
+Controls.update = function() {};
 
-};

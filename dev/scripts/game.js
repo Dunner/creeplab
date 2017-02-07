@@ -16,7 +16,7 @@ var Game = {},
     
     minimumCreeps = 300,
     minimumFood = 300,
-    delta = 0.5;
+    delta = 1;
 
 
 $(function() {
@@ -45,7 +45,7 @@ $(function() {
   }
 
   function update() {
-    ticks++;
+    ticks+=1*delta;
 
     Camera.drag(Game.input.mousePointer);
     Camera.drag(Game.input.pointer1);
@@ -79,31 +79,12 @@ $(function() {
   Game = new Phaser.Game(
     canvasElement[0].offsetWidth,
     canvasElement[0].offsetHeight,
-    Phaser.AUTO, 'spetsad-canvas', {
+    Phaser.AUTO, canvasElement[0].id, {
       preload: preload, create: create, update: update
     }
   );
 
   
 });
-
-
-function mouseWheel(event) {
-  var scale;
-  if (Game.input.mouse.wheelDelta < 0) {
-    if (zoomLevel > 0.42) {
-      scale = zoomLevel - 0.2;
-    }
-  }
-  if (Game.input.mouse.wheelDelta > 0) {
-    if (zoomLevel < 2) {
-      scale = zoomLevel + 0.2;
-    }
-  }
-  if (scale) {
-    Camera.zoomTo(scale,225);
-  }
-  
-}
 
 

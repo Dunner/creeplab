@@ -17,8 +17,7 @@ var Creep = function(data){
     brain : {},
     traits: {
       color: Math.random()
-    },
-    textStyle: { font: '32px Arial', fill: 'white', align: 'center' }
+    }
   });
 
   if (!data.brain) {
@@ -27,9 +26,6 @@ var Creep = function(data){
   } else {
     this.brain = data.brain;
   }
-
-  this.text = Game.add.text(0, 0, '1', this.textStyle);
-  this.text.anchor.set(0.5, 0);
 
   this.object = Game.add.image(data.x,data.y, Utils.createBlock(20, 20,'white'));
   this.object.anchor.setTo(0.5);
@@ -82,42 +78,68 @@ CreepHandler.findCreep = function(id) {
 
 Creep.prototype.kill = function() {
   this.object.destroy();
-  this.text.destroy();
   this.object.events.destroy();
   CreepHandler.removeCreep(this);
 };
 
 Creep.prototype.update = function() {
-  //TODO
-  var creep = this;
+  this.lived+=1*delta;
+  this.energy -= 0.03*delta;
+  this.timeSinceLastFood+=0.1*delta;
+  this.object.scale.setTo(this.energy/100, this.energy/100);
 
-  creep.object.scale.setTo(creep.energy/100, creep.energy/100);
-
-  creep.timeSinceLastFood+=0.1;
-  creep.lived++;
-
-  creep.object.speed = Math.round(creep.object.speed * 100) / 100;
-  creep.object.angle = Math.round(creep.object.angle * 100) / 100;
-
-  creep.text.position = creep.object.position;
-  creep.text.alpha = 0;
-
-  if (creep.object.speed) {
-    var moveVector = Utils.lengthDir(creep.object.speed, Utils.angle360(creep.object.angle) * Math.PI / 180);
-    creep.object.x += moveVector.x;
-    creep.object.y += moveVector.y;
-  }
-  creep.energy -= 0.01;
-  if (creep.energy <= 0) {
+  if (this.energy <= 0) {
     this.kill();
   }
+  if (this.object.speed) {
+    var moveVector = Utils.lengthDir(this.object.speed*delta, Utils.angle360(this.object.angle) * Math.PI / 180);
+    this.object.x += moveVector.x;
+    this.object.y += moveVector.y;
+  }
 
-  if (creep.lived % 15 === 0) {
+  this.findFood();
+  this.giveBirth();
+
+  if (creepSelected && this.id === creepSelected.id) {
+    updateCreepUI(this);
+  }
+
+  if (controlSelected && creepSelected && this.id === creepSelected.id) {
+    //Control creep
+    this.control();
+  } else {
+    //Creep controls itself
+    var speedOutput = this.brain.findOutput('speed').value;
+    this.object.speed = (speedOutput*2.5)*delta;
+    this.energy -= this.object.speed/15;
+    var angleOutput = this.brain.findOutput('angle').value;
+    var relativeChange = angleOutput < 0.5 ? -1 : 1;
+    this.object.angle += (relativeChange * angleOutput*6)*delta;
+    this.object.tint = this.traits.color * 0xffffff;
+
+    if (this.lived % (15/delta) === 0) {
+      this.think();
+    }
+  }
+
+};
+
+Creep.prototype.think = function () {
+  this.brain.findInput('speed').setValue(this.object.speed/delta);
+  this.brain.findInput('energy').setValue(this.energy);
+  this.brain.findInput('foodAngle').setValue(this.foodAngle);
+  this.brain.findInput('foodDist').setValue(this.foodDist);
+  this.brain.think();
+};
+
+Creep.prototype.giveBirth = function() {
+  var creep = this;
+  if (creep.lived % (15/delta) === 0) {
     for(var c=0;c<CreepHandler.creeps.length;c++){
       if (creep !== CreepHandler.creeps[c]) {
         if (creep.object.alive && CreepHandler.creeps[c].object.alive && creep.energy > 190) {
           var distToCreep = Utils.pointDistance(creep.object.position, CreepHandler.creeps[c].object.position);
-          if (distToCreep < 20) {
+          if (distToCreep < 30) {
             creep.energy-=100;
             Game.add.tween(creep.object.scale).to({ x: creep.energy/100, y: creep.energy/100}, 1000).start();
             var newBrain = new Brain();
@@ -136,11 +158,15 @@ Creep.prototype.update = function() {
       }
     }
   }
+};
 
+Creep.prototype.findFood = function() {
+  var creep = this;
   var distToClosestFood = 999,
       closestFood,
       foodAngle = 0;
-  if (creep.lived % 15 === 0) {
+
+  if (creep.lived % (15/delta) === 0) {
     for(var x=0;x<FoodHandler.food.length;x++){
       var food = FoodHandler.food[x];
       if (food.object.alive && creep.object.alive) {
@@ -151,13 +177,12 @@ Creep.prototype.update = function() {
           closestFood = food;
         }
 
-        if (foodDist < 20) {
+        if (foodDist < 30) {
           creep.eat(food);
           food.kill(food.id);
         }
       }
     }
-
   }
 
   if (closestFood) {
@@ -172,42 +197,8 @@ Creep.prototype.update = function() {
     angleDiff = Math.round(angleDiff);
 
     creep.foodAngle = angleDiff;
-    creep.text.setText(angleDiff);
   }
-
-  if (creep.lived % 15 === 0) {
-    brainGo(creep);
-  }
-  
-  if (creepSelected && creep.id === creepSelected.id) {
-    updateCreepUI(creep);
-  }
-
-  if (controlSelected && creepSelected && creep.id === creepSelected.id) {
-    //Control creep
-    creep.control();
-  } else {
-    //Creep controls itself
-    var speedOutput = creep.brain.findOutput('speed').value;
-    creep.object.speed = speedOutput*2.5;
-    creep.energy -= creep.object.speed/10;
-    var angleOutput = creep.brain.findOutput('angle').value;
-    var relativeChange = angleOutput < 0.5 ? -1 : 1;
-    creep.object.angle += relativeChange * angleOutput*6;
-    
-    creep.object.tint = creep.traits.color * 0xffffff;
-  }
-
 };
-
-function brainGo(creep) {
-  creep.brain.findInput('speed').setValue(creep.object.speed);
-  creep.brain.findInput('energy').setValue(creep.energy);
-  creep.brain.findInput('foodAngle').setValue(creep.foodAngle);
-  creep.brain.findInput('foodDist').setValue(creep.foodDist);
-  creep.brain.think();
-}
-
 
 
 Creep.prototype.eat = function() {

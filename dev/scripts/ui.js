@@ -102,7 +102,7 @@ function drawLayers(layers) {
     layer.neurons.forEach(function(neuron, neuronIndex) {
       var neuronName = neuron.name;
 
-      var neuronEl =  $('<div class="neuron '+layerName+'" id="'+layerName+'-'+neuronName+'">'+neuron.value+'</div>');
+      var neuronEl =  $('<div desc="'+neuronName+'" class="neuron '+layerName+'" id="'+layerName+'-'+neuronName+'">'+neuron.value+'</div>');
       neuronEl.css({
         'left': 10+80*layerIndex+'px',
         'top': 10+40*neuronIndex+'px'
@@ -130,6 +130,15 @@ $( 'body' ).click(function( event ) {
   if(event.target.id === 'creepControl') {
     controlSelected = $('#creepControl').prop('checked');
   }
+});
+
+var slider = $('#slider');
+var sliderBox = $('#slider-box');
+slider.change(function(){
+
+  delta = $(this).val()/2;
+  sliderBox.empty();
+  sliderBox.append('<B>Game-speed: '+$(this).val()/2+'</B>');
 });
 
 // //Dragging

@@ -144,10 +144,8 @@ html {
   left: 0px;
   top: 0px;
   width: 250px;
-  overflow: hidden;
   background: rgba(0,0,0,0.1);
-  padding-top: 40px;
-  padding-left: 10px;
+  padding: 40px 10px;
   color: #efefef;
 }
 #ui:after {
@@ -182,6 +180,8 @@ body {
   border: 2px solid #add8e6;
   display: inline-block;
   padding: 0 20px;
+  width: 100%;
+  margin-bottom: 5px;
   cursor: pointer;
 }
 .button-lb:hover {
@@ -200,6 +200,25 @@ body {
   line-height: 30px;
   text-align: center;
   font-size: 9px;
+  cursor: pointer;
+}
+.neuron:hover {
+  border-bottom-right-radius: 0px;
+  border-top-right-radius: 0px;
+}
+.neuron:hover:after {
+  content: attr(desc);
+  background: #333;
+  border-bottom-right-radius: 5px;
+  border-top-right-radius: 5px;
+  top: 0px;
+  color: #fff;
+  left: 100%;
+  padding: 0 10px;
+  line-height: 30px;
+  position: absolute;
+  z-index: 98;
+  width: auto;
 }
 .gate {
   left: 105px;
@@ -214,6 +233,13 @@ svg {
 }
 svg .line {
   position: absolute;
+}
+.slider-wrap {
+  width: 100%;
+  margin-bottom: 10px;
+}
+.slider-wrap #slider {
+  width: 100%;
 }
 
 /*# sourceMappingURL=bundle.css.map */
